@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trader Clock Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">Trader Clock Pro</div>
+            <ul class="nav-links">
+                <li><a href="#clocks">Clocks</a></li>
+                <li><a href="#sessions">Sessions</a></li>
+                <li><a href="#alerts">Alerts</a></li>
+                <li><a href="#countdown">Countdown</a></li>
+                <li><a href="#" id="preferences-link">Preferences</a></li>
+            </ul>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <span>Theme</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>Trader Clock Pro</h1>
+        </header>
+        
+        <main class="clocks-container" id="clocks">
+            <div class="clock-card">
+                <h2>Nigeria Time</h2>
+                <div class="time-display" id="nigeria-time">--:--:--</div>
+                <div class="timezone-label">GMT+1</div>
+            </div>
+
+            <div class="clock-card">
+                <h2>HFM Server Time</h2>
+                <div class="time-display" id="hfm-time">--:--:--</div>
+                <div class="timezone-label">GMT+2</div>
+            </div>
+
+            <div class="clock-card">
+                <h2>New York Time</h2>
+                <div class="time-display" id="ny-time">--:--:--</div>
+                <div class="timezone-label">GMT-4</div>
+            </div>
+        </main>
+
+        <section class="sessions-container" id="sessions">
+            <h2 class="section-title">Trading Sessions</h2>
+            <div class="sessions-grid">
+                <div class="session-card" id="sydney-session">
+                    <h3>Sydney</h3>
+                    <div class="session-status">Closed</div>
+                    <div class="session-time">00:00 - 09:00 GMT</div>
+                    <div class="session-countdown">
+                        <div class="countdown-label">Next Session</div>
+                        <div class="countdown-time" id="sydney-countdown">--:--:--</div>
+                    </div>
+                </div>
+                <div class="session-card" id="tokyo-session">
+                    <h3>Tokyo</h3>
+                    <div class="session-status">Closed</div>
+                    <div class="session-time">00:00 - 09:00 GMT</div>
+                    <div class="session-countdown">
+                        <div class="countdown-label">Next Session</div>
+                        <div class="countdown-time" id="tokyo-countdown">--:--:--</div>
+                    </div>
+                </div>
+                <div class="session-card" id="london-session">
+                    <h3>London</h3>
+                    <div class="session-status">Closed</div>
+                    <div class="session-time">08:00 - 17:00 GMT</div>
+                    <div class="session-countdown">
+                        <div class="countdown-label">Next Session</div>
+                        <div class="countdown-time" id="london-countdown">--:--:--</div>
+                    </div>
+                </div>
+                <div class="session-card" id="ny-session">
+                    <h3>New York</h3>
+                    <div class="session-status">Closed</div>
+                    <div class="session-time">13:00 - 22:00 GMT</div>
+                    <div class="session-countdown">
+                        <div class="countdown-label">Next Session</div>
+                        <div class="countdown-time" id="ny-countdown">--:--:--</div>
+                    </div>
+                </div>
+            </div>
+            <div class="session-overlap" id="london-ny-overlap">
+                <h3>London-New York Overlap</h3>
+                <div class="overlap-status">Closed</div>
+                <div class="overlap-time">13:00 - 17:00 GMT</div>
+            </div>
+        </section>
+
+        <section class="alerts-container" id="alerts">
+            <h2 class="section-title">Trading Alerts</h2>
+            <div class="alerts-grid">
+                <div class="alert-form">
+                    <h3>Set New Alert</h3>
+                    <form id="alert-form">
+                        <div class="form-group">
+                            <label for="alert-time">Time</label>
+                            <input type="time" id="alert-time" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="alert-timezone">Timezone</label>
+                            <select id="alert-timezone" required>
+                                <option value="nigeria">Nigeria (GMT+1)</option>
+                                <option value="hfm">HFM Server (GMT+2/3)</option>
+                                <option value="ny">New York (GMT-4/5)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="alert-category">Category</label>
+                            <select id="alert-category" required>
+                                <option value="session">Session Open/Close</option>
+                                <option value="custom">Custom Alert</option>
+                                <option value="daily">Daily Candle</option>
+                                <option value="overlap">Session Overlap</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="alert-priority">Priority</label>
+                            <select id="alert-priority" required>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="alert-sound">Alert Sound</label>
+                            <select id="alert-sound" required>
+                                <option value="bell">Bell</option>
+                                <option value="chime">Chime</option>
+                                <option value="beep">Beep</option>
+                                <option value="ding">Ding</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="alert-message">Message</label>
+                            <input type="text" id="alert-message" placeholder="Enter alert message" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="alert-repeat">
+                                Repeat Daily
+                            </label>
+                        </div>
+                        <button type="submit" class="btn-primary">Set Alert</button>
+                    </form>
+                </div>
+                <div class="active-alerts">
+                    <h3>Active Alerts</h3>
+                    <div class="alerts-filter">
+                        <select id="filter-category">
+                            <option value="all">All Categories</option>
+                            <option value="session">Session Alerts</option>
+                            <option value="custom">Custom Alerts</option>
+                            <option value="daily">Daily Candle</option>
+                            <option value="overlap">Session Overlap</option>
+                        </select>
+                        <select id="filter-priority">
+                            <option value="all">All Priorities</option>
+                            <option value="low">Low Priority</option>
+                            <option value="medium">Medium Priority</option>
+                            <option value="high">High Priority</option>
+                        </select>
+                    </div>
+                    <div id="alerts-list">
+                        <!-- Alerts will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="countdown-container" id="countdown">
+            <h2 class="section-title">Daily Candle Countdown</h2>
+            <div class="countdown-grid">
+                <div class="countdown-card">
+                    <h3>Time to Daily Close</h3>
+                    <div class="countdown-display" id="daily-countdown">--:--:--</div>
+                    <div class="countdown-label">HFM Server Time</div>
+                </div>
+                <div class="countdown-card">
+                    <h3>Next Candle Open</h3>
+                    <div class="countdown-display" id="next-candle">--:--:--</div>
+                    <div class="countdown-label">HFM Server Time</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Include preferences modal -->
+    <div id="preferences-modal" class="preferences-modal">
+        <div class="preferences-content">
+            <div class="preferences-header">
+                <h2>Preferences</h2>
+                <button class="close-preferences" id="close-preferences">×</button>
+            </div>
+            
+            <div class="preferences-body">
+                <!-- Theme Section -->
+                <section class="preference-section">
+                    <h3>Theme</h3>
+                    <div class="preference-option">
+                        <label>Theme Mode</label>
+                        <select id="theme-select">
+                            <option value="dark">Dark</option>
+                            <option value="light">Light</option>
+                            <option value="system">System Default</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- Timezone Section -->
+                <section class="preference-section">
+                    <h3>Displayed Timezones</h3>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="timezone-nigeria" checked>
+                            Nigeria Time (GMT+1)
+                        </label>
+                    </div>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="timezone-hfm" checked>
+                            HFM Server Time (GMT+2/3)
+                        </label>
+                    </div>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="timezone-ny" checked>
+                            New York Time (GMT-4/5)
+                        </label>
+                    </div>
+                </section>
+
+                <!-- Alert Settings Section -->
+                <section class="preference-section">
+                    <h3>Alert Settings</h3>
+                    <div class="preference-option">
+                        <label>Default Alert Sound</label>
+                        <select id="alert-sound-select">
+                            <option value="bell">Bell</option>
+                            <option value="chime">Chime</option>
+                            <option value="beep">Beep</option>
+                            <option value="ding">Ding</option>
+                        </select>
+                    </div>
+                    <div class="preference-option">
+                        <label>Alert Volume</label>
+                        <input type="range" id="alert-volume" min="0" max="100" value="80">
+                    </div>
+                </section>
+
+                <!-- Session Display Section -->
+                <section class="preference-section">
+                    <h3>Trading Sessions</h3>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="session-sydney" checked>
+                            Sydney Session
+                        </label>
+                    </div>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="session-tokyo" checked>
+                            Tokyo Session
+                        </label>
+                    </div>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="session-london" checked>
+                            London Session
+                        </label>
+                    </div>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="session-ny" checked>
+                            New York Session
+                        </label>
+                    </div>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="session-overlap" checked>
+                            London-NY Overlap
+                        </label>
+                    </div>
+                </section>
+
+                <!-- Notification Settings Section -->
+                <section class="preference-section">
+                    <h3>Notification Settings</h3>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="notifications-enabled" checked>
+                            Enable Notifications
+                        </label>
+                    </div>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="notification-session-start" checked>
+                            Session Start Notifications
+                        </label>
+                    </div>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="notification-session-end" checked>
+                            Session End Notifications
+                        </label>
+                    </div>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="notification-daily-candle" checked>
+                            Daily Candle Notifications
+                        </label>
+                    </div>
+                    <div class="preference-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="notification-custom-alerts" checked>
+                            Custom Alert Notifications
+                        </label>
+                    </div>
+                </section>
+            </div>
+
+            <div class="preferences-footer">
+                <button class="btn-secondary" id="reset-preferences">Reset to Default</button>
+                <button class="btn-primary" id="save-preferences">Save Preferences</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
