@@ -589,6 +589,8 @@ function updateUIFromPreferences() {
 
 // Initialize mobile menu
 function initMobileMenu() {
+    console.log('Starting mobile menu initialization...');
+    
     const menuToggle = document.getElementById('menu-toggle');
     const menuClose = document.getElementById('menu-close');
     const navLinks = document.getElementById('nav-links');
@@ -596,12 +598,20 @@ function initMobileMenu() {
     const body = document.body;
 
     if (!menuToggle || !menuClose || !navLinks || !menuOverlay) {
-        console.error('Required navigation elements not found');
+        console.error('Required navigation elements not found:', {
+            menuToggle: !!menuToggle,
+            menuClose: !!menuClose,
+            navLinks: !!navLinks,
+            menuOverlay: !!menuOverlay
+        });
         return;
     }
 
+    console.log('All menu elements found');
+
     // Function to close menu
     const closeMenu = () => {
+        console.log('Closing menu');
         menuToggle.classList.remove('active');
         menuToggle.setAttribute('aria-expanded', 'false');
         navLinks.classList.remove('active');
@@ -612,6 +622,7 @@ function initMobileMenu() {
 
     // Function to open menu
     const openMenu = () => {
+        console.log('Opening menu');
         menuToggle.classList.add('active');
         menuToggle.setAttribute('aria-expanded', 'true');
         navLinks.classList.add('active');
@@ -622,13 +633,19 @@ function initMobileMenu() {
 
     // Toggle menu on button click
     menuToggle.addEventListener('click', (e) => {
+        console.log('Menu toggle clicked');
         e.preventDefault();
         e.stopPropagation();
-        openMenu();
+        if (navLinks.classList.contains('active')) {
+            closeMenu();
+        } else {
+            openMenu();
+        }
     });
 
     // Close menu on close button click
     menuClose.addEventListener('click', (e) => {
+        console.log('Menu close clicked');
         e.preventDefault();
         e.stopPropagation();
         closeMenu();
@@ -637,18 +654,21 @@ function initMobileMenu() {
     // Close menu when clicking a link
     navLinks.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', () => {
+            console.log('Link clicked, closing menu');
             closeMenu();
         });
     });
 
     // Close menu when clicking overlay
     menuOverlay.addEventListener('click', () => {
+        console.log('Overlay clicked, closing menu');
         closeMenu();
     });
 
     // Close menu on escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && navLinks.classList.contains('active')) {
+            console.log('Escape key pressed, closing menu');
             closeMenu();
         }
     });
@@ -659,10 +679,13 @@ function initMobileMenu() {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
             if (window.innerWidth > 768 && navLinks.classList.contains('active')) {
+                console.log('Window resized, closing menu');
                 closeMenu();
             }
         }, 250);
     });
+
+    console.log('Mobile menu initialization complete');
 }
 
 // Initialize preferences modal
@@ -801,31 +824,83 @@ function savePreferencesFromForm() {
 
 // Initialize everything
 function init() {
-    // Initialize theme
-    setInitialTheme();
-    
-    // Initialize mobile menu
-    initMobileMenu();
-    
-    // Initialize preferences modal
-    initPreferencesModal();
-    
-    // Load preferences to form
-    loadPreferencesToForm();
-    
-    // Start all timers and updates
-    updateClocks();
-    updateSessions();
-    updateSessionCountdowns();
-    updateDailyCountdown();
-    
-    // Set up intervals for continuous updates
-    setInterval(updateClocks, 1000);
-    setInterval(updateSessions, 1000);
-    setInterval(updateSessionCountdowns, 1000);
-    setInterval(updateDailyCountdown, 1000);
-    setInterval(checkAlerts, 1000);
+    try {
+        console.log('Initializing application...');
+        
+        // Initialize theme
+        console.log('Setting initial theme...');
+        setInitialTheme();
+        
+        // Initialize mobile menu
+        console.log('Initializing mobile menu...');
+        initMobileMenu();
+        
+        // Initialize preferences modal
+        console.log('Initializing preferences modal...');
+        initPreferencesModal();
+        
+        // Load preferences to form
+        console.log('Loading preferences...');
+        loadPreferencesToForm();
+        
+        // Start all timers and updates
+        console.log('Starting updates...');
+        updateClocks();
+        updateSessions();
+        updateSessionCountdowns();
+        updateDailyCountdown();
+        
+        // Set up intervals for continuous updates
+        console.log('Setting up intervals...');
+        setInterval(() => {
+            try {
+                updateClocks();
+            } catch (error) {
+                console.error('Error updating clocks:', error);
+            }
+        }, 1000);
+        
+        setInterval(() => {
+            try {
+                updateSessions();
+            } catch (error) {
+                console.error('Error updating sessions:', error);
+            }
+        }, 1000);
+        
+        setInterval(() => {
+            try {
+                updateSessionCountdowns();
+            } catch (error) {
+                console.error('Error updating session countdowns:', error);
+            }
+        }, 1000);
+        
+        setInterval(() => {
+            try {
+                updateDailyCountdown();
+            } catch (error) {
+                console.error('Error updating daily countdown:', error);
+            }
+        }, 1000);
+        
+        setInterval(() => {
+            try {
+                checkAlerts();
+            } catch (error) {
+                console.error('Error checking alerts:', error);
+            }
+        }, 1000);
+        
+        console.log('Initialization complete');
+    } catch (error) {
+        console.error('Error during initialization:', error);
+    }
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
