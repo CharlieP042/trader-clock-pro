@@ -799,22 +799,33 @@ function savePreferencesFromForm() {
     showNotification('Preferences saved successfully', 'success');
 }
 
-// Update the init function to include mobile menu initialization
+// Initialize everything
 function init() {
+    // Initialize theme
     setInitialTheme();
-    updateTimezoneOffsets();
-    updateClocks();
-    setInterval(updateClocks, 1000);
-    updateAlertsList();
-    setInterval(checkAlerts, 1000);
-    setInterval(updateDailyCountdown, 1000);
-    setInterval(updateSessionCountdowns, 1000);
-    updateDailyCountdown();
-    updateSessionCountdowns();
-    initPreferencesModal();
+    
+    // Initialize mobile menu
     initMobileMenu();
-    updateUIFromPreferences();
+    
+    // Initialize preferences modal
+    initPreferencesModal();
+    
+    // Load preferences to form
+    loadPreferencesToForm();
+    
+    // Start all timers and updates
+    updateClocks();
+    updateSessions();
+    updateSessionCountdowns();
+    updateDailyCountdown();
+    
+    // Set up intervals for continuous updates
+    setInterval(updateClocks, 1000);
+    setInterval(updateSessions, 1000);
+    setInterval(updateSessionCountdowns, 1000);
+    setInterval(updateDailyCountdown, 1000);
+    setInterval(checkAlerts, 1000);
 }
 
-// Initialize everything when the DOM is loaded
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
