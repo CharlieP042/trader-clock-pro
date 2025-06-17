@@ -1,6 +1,6 @@
 // Timezone offsets in hours
 const TIMEZONES = {
-    NIGERIA: 1,    // GMT+1
+    NIGERIA: 1,    // GMT+1 (No DST)
     HFM: 2,        // GMT+2 (will be adjusted for DST)
     NY: -4         // GMT-4 (will be adjusted for DST)
 };
@@ -30,10 +30,11 @@ const alertForm = document.getElementById('alert-form');
 const alertsList = document.getElementById('alerts-list');
 const filterCategory = document.getElementById('filter-category');
 const filterPriority = document.getElementById('filter-priority');
-let alerts = JSON.parse(localStorage.getItem('alerts')) || [];
+let alerts = [];
 
 // Theme Management
-const themeToggle = document.getElementById('theme-toggle');
+const desktopThemeToggle = document.getElementById('desktop-theme-toggle');
+const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
 const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
 
 // Session countdown elements
@@ -52,7 +53,7 @@ const ALERT_SOUNDS = {
 
 // Default preferences
 const DEFAULT_PREFERENCES = {
-    theme: 'dark',
+    theme: 'system',
     timezones: {
         nigeria: true,
         hfm: true,
@@ -76,38 +77,56 @@ const DEFAULT_PREFERENCES = {
     }
 };
 
-// Load preferences from localStorage
+// Load preferences from localStorage with error handling
 function loadPreferences() {
-    const savedPreferences = localStorage.getItem('preferences');
-    return savedPreferences ? JSON.parse(savedPreferences) : DEFAULT_PREFERENCES;
-}
-
-// Save preferences to localStorage
-function savePreferences(preferences) {
-    localStorage.setItem('preferences', JSON.stringify(preferences));
-}
-
-// Update a specific preference
-function updatePreference(key, value) {
-    const preferences = loadPreferences();
-    const keys = key.split('.');
-    let current = preferences;
-    
-    // Navigate to the nested property
-    for (let i = 0; i < keys.length - 1; i++) {
-        current = current[keys[i]];
+    try {
+        const savedPreferences = localStorage.getItem('preferences');
+        return savedPreferences ? JSON.parse(savedPreferences) : DEFAULT_PREFERENCES;
+    } catch (error) {
+        console.error('Error loading preferences:', error);
+        return DEFAULT_PREFERENCES;
     }
-    
-    // Update the value
-    current[keys[keys.length - 1]] = value;
-    
-    // Save the updated preferences
-    savePreferences(preferences);
-    
-    // Dispatch a custom event to notify other components
-    window.dispatchEvent(new CustomEvent('preferencesUpdated', {
-        detail: { key, value }
-    }));
+}
+
+// Save preferences to localStorage with error handling
+function savePreferences(preferences) {
+    try {
+        localStorage.setItem('preferences', JSON.stringify(preferences));
+    } catch (error) {
+        console.error('Error saving preferences:', error);
+        showNotification('Failed to save preferences. Please check your browser storage permissions.', 'error');
+    }
+}
+
+// Update a specific preference with error handling
+function updatePreference(key, value) {
+    try {
+        const preferences = loadPreferences();
+        const keys = key.split('.');
+        let current = preferences;
+        
+        // Navigate to the nested property
+        for (let i = 0; i < keys.length - 1; i++) {
+            current = current[keys[i]];
+        }
+        
+        // Update the value
+        current[keys[keys.length - 1]] = value;
+        
+        // Save the updated preferences
+        savePreferences(preferences);
+        
+        // Dispatch a custom event to notify other components
+        window.dispatchEvent(new CustomEvent('preferencesUpdated', {
+            detail: { key, value }
+        }));
+        
+        return true;
+    } catch (error) {
+        console.error('Error updating preference:', error);
+        showNotification('Failed to update preference', 'error');
+        return false;
+    }
 }
 
 // Reset preferences to default
@@ -119,28 +138,30 @@ function resetPreferences() {
 // Preferences Management
 let preferences = loadPreferences();
 
-// Set initial theme
+// Set initial theme with proper handling
 function setInitialTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    } else if (prefersDarkScheme.matches) {
-        document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-        document.documentElement.setAttribute('data-theme', 'light');
+    const preferences = loadPreferences();
+    let theme = preferences.theme;
+    
+    if (theme === 'system') {
+        theme = prefersDarkScheme.matches ? 'dark' : 'light';
     }
+    
+    document.documentElement.setAttribute('data-theme', theme);
 }
 
-// Toggle theme
+// Toggle theme with proper handling
 function toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
     document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    updatePreference('theme', newTheme);
 }
 
-// Theme toggle event listener
-themeToggle.addEventListener('click', toggleTheme);
+// Theme toggle event listeners
+desktopThemeToggle.addEventListener('click', toggleTheme);
+mobileThemeToggle.addEventListener('click', toggleTheme);
 
 // Format time as HH:MM:SS
 function formatTime(date) {
@@ -159,21 +180,32 @@ function getTimeInTimezone(offset) {
     return new Date(utc + (3600000 * offset));
 }
 
-// Get current GMT hour
+// Get current GMT hour with proper handling
 function getCurrentGMTHour() {
     return new Date().getUTCHours();
 }
 
-// Check if a session is active
+// Check if a session is active with proper timezone handling
 function isSessionActive(session) {
     const currentHour = getCurrentGMTHour();
-    return currentHour >= session.start && currentHour < session.end;
+    const currentMinute = new Date().getUTCMinutes();
+    const currentTime = currentHour + (currentMinute / 60);
+    
+    // Handle sessions that cross midnight
+    if (session.start > session.end) {
+        return currentTime >= session.start || currentTime < session.end;
+    }
+    
+    return currentTime >= session.start && currentTime < session.end;
 }
 
-// Check if London-NY overlap is active
+// Check if London-NY overlap is active with proper timezone handling
 function isLondonNYOverlapActive() {
     const currentHour = getCurrentGMTHour();
-    return currentHour >= SESSIONS.LONDON.start && currentHour < SESSIONS.NY.end;
+    const currentMinute = new Date().getUTCMinutes();
+    const currentTime = currentHour + (currentMinute / 60);
+    
+    return currentTime >= SESSIONS.LONDON.start && currentTime < SESSIONS.NY.end;
 }
 
 // Update session statuses
@@ -208,8 +240,41 @@ function updateSessions() {
     }
 }
 
-// Update all clocks
+// Helper function to check DST for a specific timezone
+function isDSTActiveForTimezone(timezone) {
+    const date = new Date();
+    const jan = new Date(date.getFullYear(), 0, 1);
+    const jul = new Date(date.getFullYear(), 6, 1);
+    
+    // Create dates in the target timezone
+    const janInTimezone = new Date(jan.getTime() + (3600000 * timezone));
+    const julInTimezone = new Date(jul.getTime() + (3600000 * timezone));
+    const currentInTimezone = new Date(date.getTime() + (3600000 * timezone));
+    
+    return Math.min(janInTimezone.getTimezoneOffset(), julInTimezone.getTimezoneOffset()) === currentInTimezone.getTimezoneOffset();
+}
+
+// Update timezone offsets based on DST
+function updateTimezoneOffsets() {
+    // NY DST check
+    if (isDSTActiveForTimezone(TIMEZONES.NY)) {
+        TIMEZONES.NY = -4;  // EDT
+    } else {
+        TIMEZONES.NY = -5;  // EST
+    }
+    
+    // HFM DST check
+    if (isDSTActiveForTimezone(TIMEZONES.HFM)) {
+        TIMEZONES.HFM = 3;  // GMT+3 during DST
+    } else {
+        TIMEZONES.HFM = 2;  // GMT+2 during standard time
+    }
+}
+
+// Update all clocks with proper timezone handling
 function updateClocks() {
+    updateTimezoneOffsets(); // Update timezone offsets before displaying times
+    
     // Nigeria Time (GMT+1)
     const nigeriaTime = getTimeInTimezone(TIMEZONES.NIGERIA);
     nigeriaTimeDisplay.textContent = formatTime(nigeriaTime);
@@ -226,61 +291,98 @@ function updateClocks() {
     updateSessions();
 }
 
-// Check for DST in New York
-function isDSTActive() {
-    const date = new Date();
-    const jan = new Date(date.getFullYear(), 0, 1);
-    const jul = new Date(date.getFullYear(), 6, 1);
-    return Math.min(jan.getTimezoneOffset(), jul.getTimezoneOffset()) === date.getTimezoneOffset();
-}
-
-// Update timezone offsets based on DST
-function updateTimezoneOffsets() {
-    if (isDSTActive()) {
-        TIMEZONES.NY = -4;  // EDT
-        TIMEZONES.HFM = 3;  // GMT+3 during DST
-    } else {
-        TIMEZONES.NY = -5;  // EST
-        TIMEZONES.HFM = 2;  // GMT+2 during standard time
+// Load alerts from localStorage with error handling
+function loadAlerts() {
+    try {
+        const savedAlerts = localStorage.getItem('alerts');
+        alerts = savedAlerts ? JSON.parse(savedAlerts) : [];
+    } catch (error) {
+        console.error('Error loading alerts:', error);
+        alerts = [];
     }
 }
 
-// Create alert element
-function createAlertElement(alert) {
-    const alertElement = document.createElement('div');
-    alertElement.className = 'alert-item';
-    alertElement.innerHTML = `
-        <div class="alert-info">
-            <div class="alert-time">${alert.time} (${alert.timezone})</div>
-            <div class="alert-message">${alert.message}</div>
-        </div>
-        <button class="delete-alert" data-id="${alert.id}">×</button>
-    `;
-    return alertElement;
+// Save alerts to localStorage with error handling
+function saveAlerts() {
+    try {
+        localStorage.setItem('alerts', JSON.stringify(alerts));
+    } catch (error) {
+        console.error('Error saving alerts:', error);
+        // Show user-friendly error message
+        showNotification('Failed to save alerts. Please check your browser storage permissions.', 'error');
+    }
 }
 
-// Update alerts list
-function updateAlertsList() {
-    alertsList.innerHTML = '';
-    const categoryFilter = filterCategory.value;
-    const priorityFilter = filterPriority.value;
+// Show notification to user
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
     
-    const filteredAlerts = alerts.filter(alert => {
-        const categoryMatch = categoryFilter === 'all' || alert.category === categoryFilter;
-        const priorityMatch = priorityFilter === 'all' || alert.priority === priorityFilter;
-        return categoryMatch && priorityMatch;
-    });
-
-    filteredAlerts.forEach(alert => {
-        alertsList.appendChild(createAlertElement(alert));
-    });
-    localStorage.setItem('alerts', JSON.stringify(alerts));
+    // Remove notification after 5 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
 }
 
-// Play alert sound
+// Create alert element with error handling
+function createAlertElement(alert) {
+    try {
+        const alertElement = document.createElement('div');
+        alertElement.className = `alert-item priority-${alert.priority}`;
+        alertElement.innerHTML = `
+            <div class="alert-header">
+                <span class="alert-time">${alert.time}</span>
+                <span class="alert-category">${alert.category}</span>
+                <span class="alert-priority">${alert.priority}</span>
+            </div>
+            <div class="alert-message">${alert.message}</div>
+            <div class="alert-actions">
+                <button class="btn-delete" onclick="deleteAlert('${alert.id}')">Delete</button>
+            </div>
+        `;
+        return alertElement;
+    } catch (error) {
+        console.error('Error creating alert element:', error);
+        return null;
+    }
+}
+
+// Update alerts list with error handling
+function updateAlertsList() {
+    try {
+        alertsList.innerHTML = '';
+        const filteredAlerts = alerts.filter(alert => {
+            const categoryMatch = filterCategory.value === 'all' || alert.category === filterCategory.value;
+            const priorityMatch = filterPriority.value === 'all' || alert.priority === filterPriority.value;
+            return categoryMatch && priorityMatch;
+        });
+
+        filteredAlerts.forEach(alert => {
+            const alertElement = createAlertElement(alert);
+            if (alertElement) {
+                alertsList.appendChild(alertElement);
+            }
+        });
+    } catch (error) {
+        console.error('Error updating alerts list:', error);
+        showNotification('Failed to update alerts list', 'error');
+    }
+}
+
+// Play alert sound with error handling
 function playAlertSound(soundType) {
-    const audio = new Audio(ALERT_SOUNDS[soundType]);
-    audio.play();
+    try {
+        const audio = new Audio(ALERT_SOUNDS[soundType]);
+        audio.volume = preferences.alertVolume || 0.8;
+        audio.play().catch(error => {
+            console.error('Error playing alert sound:', error);
+            showNotification('Failed to play alert sound. Please check your browser audio settings.', 'error');
+        });
+    } catch (error) {
+        console.error('Error initializing alert sound:', error);
+    }
 }
 
 // Check alerts
@@ -381,60 +483,41 @@ if (Notification.permission !== 'granted') {
     Notification.requestPermission();
 }
 
-// Daily Candle Countdown
-function updateDailyCountdown() {
-    const hfmTime = getTimeInTimezone(TIMEZONES.HFM);
-    
-    // Daily candle closes at 00:00 HFM time
-    const nextClose = new Date(hfmTime);
-    nextClose.setHours(24, 0, 0, 0);
-    
-    // Calculate time until next close
-    const timeUntilClose = nextClose - hfmTime;
-    const hoursUntilClose = Math.floor(timeUntilClose / (1000 * 60 * 60));
-    const minutesUntilClose = Math.floor((timeUntilClose % (1000 * 60 * 60)) / (1000 * 60));
-    const secondsUntilClose = Math.floor((timeUntilClose % (1000 * 60)) / 1000);
-    
-    // Format the countdown
-    const countdownDisplay = `${String(hoursUntilClose).padStart(2, '0')}:${String(minutesUntilClose).padStart(2, '0')}:${String(secondsUntilClose).padStart(2, '0')}`;
-    document.getElementById('daily-countdown').textContent = countdownDisplay;
-    document.getElementById('next-candle').textContent = countdownDisplay;
-}
-
-// Calculate time until next session
+// Calculate time until next session with proper handling
 function calculateTimeUntilNextSession(session) {
     const now = new Date();
     const currentHour = now.getUTCHours();
-    const currentMinutes = now.getUTCMinutes();
-    const currentSeconds = now.getUTCSeconds();
+    const currentMinute = now.getUTCMinutes();
+    const currentSecond = now.getUTCSeconds();
     
-    let nextSessionStart;
-    const today = new Date(now);
-    today.setUTCHours(session.start, 0, 0, 0);
+    let targetHour = session.start;
+    let targetDate = new Date(now);
     
-    if (currentHour >= session.start) {
-        // Next session is tomorrow
-        nextSessionStart = new Date(today);
-        nextSessionStart.setUTCDate(nextSessionStart.getUTCDate() + 1);
-    } else {
-        // Next session is today
-        nextSessionStart = today;
+    // If session has already started today, calculate for next day
+    if (currentHour >= session.end) {
+        targetDate.setUTCDate(targetDate.getUTCDate() + 1);
     }
     
-    const timeUntilNext = nextSessionStart - now;
-    return timeUntilNext;
-}
-
-// Format countdown time
-function formatCountdownTime(milliseconds) {
-    const hours = Math.floor(milliseconds / (1000 * 60 * 60));
-    const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((milliseconds % (1000 * 60)) / 1000);
+    // Set target time
+    targetDate.setUTCHours(targetHour, 0, 0, 0);
     
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    // Calculate time difference
+    return targetDate.getTime() - now.getTime();
 }
 
-// Update session countdowns
+// Format countdown time with proper handling
+function formatCountdownTime(milliseconds) {
+    if (milliseconds < 0) return '--:--:--';
+    
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Update session countdowns with proper handling
 function updateSessionCountdowns() {
     const sessions = [
         { element: sydneyCountdown, session: SESSIONS.SYDNEY },
@@ -442,11 +525,40 @@ function updateSessionCountdowns() {
         { element: londonCountdown, session: SESSIONS.LONDON },
         { element: nyCountdown, session: SESSIONS.NY }
     ];
-
+    
     sessions.forEach(({ element, session }) => {
         const timeUntilNext = calculateTimeUntilNextSession(session);
         element.textContent = formatCountdownTime(timeUntilNext);
     });
+}
+
+// Update daily countdown with proper handling
+function updateDailyCountdown() {
+    const now = new Date();
+    const currentHour = now.getUTCHours();
+    const currentMinute = now.getUTCMinutes();
+    const currentSecond = now.getUTCSeconds();
+    
+    // Calculate time until next daily candle (HFM Server Time)
+    const hfmOffset = TIMEZONES.HFM;
+    const hfmHour = (currentHour + hfmOffset + 24) % 24;
+    
+    // Calculate time until daily close
+    let closeDate = new Date(now);
+    if (hfmHour >= 0) {
+        closeDate.setUTCDate(closeDate.getUTCDate() + 1);
+    }
+    closeDate.setUTCHours(-hfmOffset, 0, 0, 0);
+    const timeUntilClose = closeDate.getTime() - now.getTime();
+    
+    // Calculate time until next candle open
+    let openDate = new Date(closeDate);
+    openDate.setUTCHours(openDate.getUTCHours() + 1); // Next candle opens 1 hour after close
+    const timeUntilOpen = openDate.getTime() - now.getTime();
+    
+    // Update both countdown displays
+    document.getElementById('daily-countdown').textContent = formatCountdownTime(timeUntilClose);
+    document.getElementById('next-candle').textContent = formatCountdownTime(timeUntilOpen);
 }
 
 // Update UI based on preferences
@@ -475,53 +587,160 @@ function updateUIFromPreferences() {
         preferences.sessions.overlap ? 'block' : 'none';
 }
 
+// Initialize mobile menu
+function initMobileMenu() {
+    const menuToggle = document.getElementById('menu-toggle');
+    const menuClose = document.getElementById('menu-close');
+    const navLinks = document.getElementById('nav-links');
+    const menuOverlay = document.getElementById('menu-overlay');
+    const body = document.body;
+
+    if (!menuToggle || !menuClose || !navLinks || !menuOverlay) {
+        console.error('Required navigation elements not found');
+        return;
+    }
+
+    // Function to close menu
+    const closeMenu = () => {
+        menuToggle.classList.remove('active');
+        menuToggle.setAttribute('aria-expanded', 'false');
+        navLinks.classList.remove('active');
+        menuOverlay.classList.remove('active');
+        menuOverlay.setAttribute('aria-hidden', 'true');
+        body.style.overflow = '';
+    };
+
+    // Function to open menu
+    const openMenu = () => {
+        menuToggle.classList.add('active');
+        menuToggle.setAttribute('aria-expanded', 'true');
+        navLinks.classList.add('active');
+        menuOverlay.classList.add('active');
+        menuOverlay.setAttribute('aria-hidden', 'false');
+        body.style.overflow = 'hidden';
+    };
+
+    // Toggle menu on button click
+    menuToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openMenu();
+    });
+
+    // Close menu on close button click
+    menuClose.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenu();
+    });
+
+    // Close menu when clicking a link
+    navLinks.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            closeMenu();
+        });
+    });
+
+    // Close menu when clicking overlay
+    menuOverlay.addEventListener('click', () => {
+        closeMenu();
+    });
+
+    // Close menu on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && navLinks.classList.contains('active')) {
+            closeMenu();
+        }
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (window.innerWidth > 768 && navLinks.classList.contains('active')) {
+                closeMenu();
+            }
+        }, 250);
+    });
+}
+
 // Initialize preferences modal
 function initPreferencesModal() {
     const modal = document.getElementById('preferences-modal');
     const closeBtn = document.getElementById('close-preferences');
+    const preferencesLink = document.getElementById('preferences-link');
     const saveBtn = document.getElementById('save-preferences');
     const resetBtn = document.getElementById('reset-preferences');
-    const preferencesLink = document.getElementById('preferences-link');
-    
-    // Open modal when clicking preferences link
+    const body = document.body;
+
+    if (!modal || !closeBtn || !preferencesLink) {
+        console.error('Required preferences modal elements not found');
+        return;
+    }
+
+    // Function to close modal
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        body.style.overflow = '';
+        preferencesLink.focus();
+    };
+
+    // Function to open modal
+    const openModal = () => {
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        body.style.overflow = 'hidden';
+    };
+
+    // Open modal on preferences link click
     preferencesLink.addEventListener('click', (e) => {
         e.preventDefault();
-        modal.classList.add('active');
-        loadPreferencesToForm();
+        e.stopPropagation();
+        openModal();
     });
-    
-    // Close modal
+
+    // Close modal on close button click
     closeBtn.addEventListener('click', () => {
-        modal.classList.remove('active');
+        closeModal();
     });
-    
-    // Close modal when clicking outside
+
+    // Close modal on overlay click
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
-            modal.classList.remove('active');
+            closeModal();
         }
     });
-    
+
+    // Close modal on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
     // Save preferences
-    saveBtn.addEventListener('click', () => {
-        savePreferencesFromForm();
-        updateUIFromPreferences();
-        modal.classList.remove('active');
-    });
-    
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            savePreferencesFromForm();
+            closeModal();
+        });
+    }
+
     // Reset preferences
-    resetBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to reset all preferences to default?')) {
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
             resetPreferences();
-            preferences = loadPreferences();
             loadPreferencesToForm();
-            updateUIFromPreferences();
-        }
-    });
+        });
+    }
 }
 
-// Load preferences into form
+// Load preferences to form
 function loadPreferencesToForm() {
+    const preferences = loadPreferences();
+    
     // Theme
     document.getElementById('theme-select').value = preferences.theme;
     
@@ -529,10 +748,6 @@ function loadPreferencesToForm() {
     document.getElementById('timezone-nigeria').checked = preferences.timezones.nigeria;
     document.getElementById('timezone-hfm').checked = preferences.timezones.hfm;
     document.getElementById('timezone-ny').checked = preferences.timezones.ny;
-    
-    // Alert settings
-    document.getElementById('alert-sound-select').value = preferences.alertSound;
-    document.getElementById('alert-volume').value = preferences.alertVolume * 100;
     
     // Sessions
     document.getElementById('session-sydney').checked = preferences.sessions.sydney;
@@ -543,23 +758,25 @@ function loadPreferencesToForm() {
     
     // Notifications
     document.getElementById('notifications-enabled').checked = preferences.notifications.enabled;
-    document.getElementById('notification-session-start').checked = preferences.notifications.sessionStart;
-    document.getElementById('notification-session-end').checked = preferences.notifications.sessionEnd;
-    document.getElementById('notification-daily-candle').checked = preferences.notifications.dailyCandle;
-    document.getElementById('notification-custom-alerts').checked = preferences.notifications.customAlerts;
+    document.getElementById('notifications-session-start').checked = preferences.notifications.sessionStart;
+    document.getElementById('notifications-session-end').checked = preferences.notifications.sessionEnd;
+    document.getElementById('notifications-daily-candle').checked = preferences.notifications.dailyCandle;
+    document.getElementById('notifications-custom-alerts').checked = preferences.notifications.customAlerts;
+    
+    // Alert settings
+    document.getElementById('alert-sound-select').value = preferences.alertSound;
+    document.getElementById('alert-volume').value = preferences.alertVolume * 100;
 }
 
 // Save preferences from form
 function savePreferencesFromForm() {
-    preferences = {
+    const preferences = {
         theme: document.getElementById('theme-select').value,
         timezones: {
             nigeria: document.getElementById('timezone-nigeria').checked,
             hfm: document.getElementById('timezone-hfm').checked,
             ny: document.getElementById('timezone-ny').checked
         },
-        alertSound: document.getElementById('alert-sound-select').value,
-        alertVolume: document.getElementById('alert-volume').value / 100,
         sessions: {
             sydney: document.getElementById('session-sydney').checked,
             tokyo: document.getElementById('session-tokyo').checked,
@@ -569,17 +786,20 @@ function savePreferencesFromForm() {
         },
         notifications: {
             enabled: document.getElementById('notifications-enabled').checked,
-            sessionStart: document.getElementById('notification-session-start').checked,
-            sessionEnd: document.getElementById('notification-session-end').checked,
-            dailyCandle: document.getElementById('notification-daily-candle').checked,
-            customAlerts: document.getElementById('notification-custom-alerts').checked
-        }
+            sessionStart: document.getElementById('notifications-session-start').checked,
+            sessionEnd: document.getElementById('notifications-session-end').checked,
+            dailyCandle: document.getElementById('notifications-daily-candle').checked,
+            customAlerts: document.getElementById('notifications-custom-alerts').checked
+        },
+        alertSound: document.getElementById('alert-sound-select').value,
+        alertVolume: document.getElementById('alert-volume').value / 100
     };
     
     savePreferences(preferences);
+    showNotification('Preferences saved successfully', 'success');
 }
 
-// Update the init function to include preferences initialization
+// Update the init function to include mobile menu initialization
 function init() {
     setInitialTheme();
     updateTimezoneOffsets();
@@ -592,38 +812,9 @@ function init() {
     updateDailyCountdown();
     updateSessionCountdowns();
     initPreferencesModal();
+    initMobileMenu();
     updateUIFromPreferences();
 }
 
-// Start the application
-init();
-
-// Menu Toggle
-const menuToggle = document.getElementById('menu-toggle');
-const navLinks = document.querySelector('.nav-links');
-const menuOverlay = document.getElementById('menu-overlay');
-
-menuToggle.addEventListener('click', () => {
-    menuToggle.classList.toggle('active');
-    navLinks.classList.toggle('active');
-    menuOverlay.classList.toggle('active');
-    document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
-});
-
-// Close menu when clicking a link
-document.querySelectorAll('.nav-links a').forEach(link => {
-    link.addEventListener('click', () => {
-        menuToggle.classList.remove('active');
-        navLinks.classList.remove('active');
-        menuOverlay.classList.remove('active');
-        document.body.style.overflow = '';
-    });
-});
-
-// Close menu when clicking outside
-menuOverlay.addEventListener('click', () => {
-    menuToggle.classList.remove('active');
-    navLinks.classList.remove('active');
-    menuOverlay.classList.remove('active');
-    document.body.style.overflow = '';
-});
+// Initialize everything when the DOM is loaded
+document.addEventListener('DOMContentLoaded', init);
