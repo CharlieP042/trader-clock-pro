@@ -1,6 +1,3 @@
-console.log('=== SCRIPT.JS LOADED ===');
-console.log('Current time:', new Date().toISOString());
-
 // Timezone offsets in hours
 const TIMEZONES = {
     NIGERIA: 1,    // GMT+1 (No DST)
@@ -79,6 +76,70 @@ const DEFAULT_PREFERENCES = {
         customAlerts: true
     }
 };
+
+// Safari detection and fixes
+const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+// Safari-specific fixes
+if (isSafari || isIOS) {
+    console.log('Safari/iOS detected, applying specific fixes...');
+    
+    // Fix for Safari's strict JavaScript policies
+    document.addEventListener('DOMContentLoaded', function() {
+        // Force a repaint to ensure elements are properly rendered
+        document.body.style.display = 'none';
+        document.body.offsetHeight; // Force reflow
+        document.body.style.display = '';
+    });
+}
+
+// More robust initialization for Safari
+function safariSafeInit() {
+    try {
+        console.log('Safari-safe initialization starting...');
+        
+        // Use requestAnimationFrame for better Safari compatibility
+        const initWithRAF = () => {
+            try {
+                setInitialTheme();
+                updateTimezoneOffsets();
+                updateClocks();
+                
+                // Use more conservative intervals for Safari
+                const interval = isSafari || isIOS ? 2000 : 1000;
+                
+                setInterval(updateClocks, interval);
+                setInterval(checkAlerts, interval);
+                setInterval(updateDailyCountdown, interval);
+                setInterval(updateSessionCountdowns, interval);
+                
+                // Initial updates
+                updateDailyCountdown();
+                updateSessionCountdowns();
+                updateAlertsList();
+                
+                initPreferencesModal();
+                initMobileMenu();
+                updateUIFromPreferences();
+                
+                console.log('Safari-safe initialization complete');
+            } catch (error) {
+                console.error('Error in Safari-safe initialization:', error);
+            }
+        };
+        
+        // Use requestAnimationFrame for better timing
+        if (window.requestAnimationFrame) {
+            requestAnimationFrame(initWithRAF);
+        } else {
+            setTimeout(initWithRAF, 100);
+        }
+        
+    } catch (error) {
+        console.error('Error in safariSafeInit:', error);
+    }
+}
 
 // Load preferences from localStorage with error handling
 function loadPreferences() {
@@ -509,26 +570,41 @@ if (Notification.permission !== 'granted') {
     Notification.requestPermission();
 }
 
-// Calculate time until next session with proper handling
+// Calculate time until next session with Safari compatibility
 function calculateTimeUntilNextSession(session) {
-    const now = new Date();
-    const currentHour = now.getUTCHours();
-    const currentMinute = now.getUTCMinutes();
-    const currentSecond = now.getUTCSeconds();
-    
-    let targetHour = session.start;
-    let targetDate = new Date(now);
-    
-    // If session has already started today, calculate for next day
-    if (currentHour >= session.end) {
-        targetDate.setUTCDate(targetDate.getUTCDate() + 1);
+    try {
+        const now = new Date();
+        const currentHour = now.getUTCHours();
+        const currentMinute = now.getUTCMinutes();
+        const currentSecond = now.getUTCSeconds();
+        
+        let targetHour = session.start;
+        let targetDate = new Date(now);
+        
+        // If session has already started today, calculate for next day
+        if (currentHour >= session.end) {
+            targetDate.setUTCDate(targetDate.getUTCDate() + 1);
+        }
+        
+        // Set target time
+        targetDate.setUTCHours(targetHour, 0, 0, 0);
+        
+        // Calculate time difference
+        const timeDiff = targetDate.getTime() - now.getTime();
+        
+        // Safari-specific validation
+        if (isSafari || isIOS) {
+            if (isNaN(timeDiff) || timeDiff < 0) {
+                console.warn('Invalid time difference calculated, using fallback');
+                return 3600000; // 1 hour fallback
+            }
+        }
+        
+        return timeDiff;
+    } catch (error) {
+        console.error('Error calculating time until next session:', error);
+        return 3600000; // 1 hour fallback
     }
-    
-    // Set target time
-    targetDate.setUTCHours(targetHour, 0, 0, 0);
-    
-    // Calculate time difference
-    return targetDate.getTime() - now.getTime();
 }
 
 // Format countdown time with proper handling
@@ -653,39 +729,93 @@ function initMobileMenu() {
 
         // Function to close menu
         const closeMenu = () => {
-            menuToggle.classList.remove('active');
-            menuToggle.setAttribute('aria-expanded', 'false');
-            navLinks.classList.remove('active');
-            menuOverlay.classList.remove('active');
-            menuOverlay.setAttribute('aria-hidden', 'true');
-            body.style.overflow = '';
+            try {
+                menuToggle.classList.remove('active');
+                menuToggle.setAttribute('aria-expanded', 'false');
+                navLinks.classList.remove('active');
+                menuOverlay.classList.remove('active');
+                menuOverlay.setAttribute('aria-hidden', 'true');
+                
+                // Safari-specific body overflow fix
+                if (isSafari || isIOS) {
+                    setTimeout(() => {
+                        body.style.overflow = '';
+                    }, 100);
+                } else {
+                    body.style.overflow = '';
+                }
+            } catch (error) {
+                console.error('Error closing menu:', error);
+            }
         };
 
         // Function to open menu
         const openMenu = () => {
-            menuToggle.classList.add('active');
-            menuToggle.setAttribute('aria-expanded', 'true');
-            navLinks.classList.add('active');
-            menuOverlay.classList.add('active');
-            menuOverlay.setAttribute('aria-hidden', 'false');
-            body.style.overflow = 'hidden';
+            try {
+                menuToggle.classList.add('active');
+                menuToggle.setAttribute('aria-expanded', 'true');
+                navLinks.classList.add('active');
+                menuOverlay.classList.add('active');
+                menuOverlay.setAttribute('aria-hidden', 'false');
+                
+                // Safari-specific body overflow fix
+                if (isSafari || isIOS) {
+                    setTimeout(() => {
+                        body.style.overflow = 'hidden';
+                    }, 100);
+                } else {
+                    body.style.overflow = 'hidden';
+                }
+            } catch (error) {
+                console.error('Error opening menu:', error);
+            }
         };
 
-        // Toggle menu on button click
-        menuToggle.addEventListener('click', (e) => {
+        // Toggle menu on button click - Safari-specific event handling
+        const handleMenuToggle = (e) => {
             e.preventDefault();
             e.stopPropagation();
             console.log('Menu toggle clicked');
-            openMenu();
-        });
+            
+            // Safari-specific delay
+            if (isSafari || isIOS) {
+                setTimeout(() => {
+                    openMenu();
+                }, 50);
+            } else {
+                openMenu();
+            }
+        };
 
-        // Close menu on close button click
-        menuClose.addEventListener('click', (e) => {
+        // Close menu on close button click - Safari-specific event handling
+        const handleMenuClose = (e) => {
             e.preventDefault();
             e.stopPropagation();
             console.log('Menu close clicked');
-            closeMenu();
-        });
+            
+            // Safari-specific delay
+            if (isSafari || isIOS) {
+                setTimeout(() => {
+                    closeMenu();
+                }, 50);
+            } else {
+                closeMenu();
+            }
+        };
+
+        // Add event listeners with Safari-specific handling
+        if (isSafari || isIOS) {
+            // Use touchstart for better iOS responsiveness
+            menuToggle.addEventListener('touchstart', handleMenuToggle, { passive: false });
+            menuClose.addEventListener('touchstart', handleMenuClose, { passive: false });
+            
+            // Also add click for fallback
+            menuToggle.addEventListener('click', handleMenuToggle);
+            menuClose.addEventListener('click', handleMenuClose);
+        } else {
+            menuToggle.addEventListener('click', handleMenuToggle);
+            menuClose.addEventListener('click', handleMenuClose);
+        }
 
         // Close menu when clicking a link
         navLinks.querySelectorAll('a').forEach(link => {
@@ -899,6 +1029,9 @@ function testCountdownFunctionality() {
 function init() {
     try {
         console.log('Initializing Trader Clock Pro...');
+        console.log('User Agent:', navigator.userAgent);
+        console.log('Is Safari:', isSafari);
+        console.log('Is iOS:', isIOS);
         
         // Check if required elements exist
         const requiredElements = [
@@ -913,24 +1046,29 @@ function init() {
             console.error('Missing required elements:', missingElements);
         }
         
-        setInitialTheme();
-        updateTimezoneOffsets();
-        updateClocks();
-        setInterval(updateClocks, 1000);
-        updateAlertsList();
-        setInterval(checkAlerts, 1000);
-        setInterval(updateDailyCountdown, 1000);
-        setInterval(updateSessionCountdowns, 1000);
-        updateDailyCountdown();
-        updateSessionCountdowns();
-        initPreferencesModal();
-        initMobileMenu();
-        updateUIFromPreferences();
+        // Use Safari-safe initialization if needed
+        if (isSafari || isIOS) {
+            safariSafeInit();
+        } else {
+            setInitialTheme();
+            updateTimezoneOffsets();
+            updateClocks();
+            setInterval(updateClocks, 1000);
+            updateAlertsList();
+            setInterval(checkAlerts, 1000);
+            setInterval(updateDailyCountdown, 1000);
+            setInterval(updateSessionCountdowns, 1000);
+            updateDailyCountdown();
+            updateSessionCountdowns();
+            initPreferencesModal();
+            initMobileMenu();
+            updateUIFromPreferences();
+        }
         
         // Test countdown functionality
         setTimeout(() => {
             testCountdownFunctionality();
-        }, 1000);
+        }, 2000);
         
         console.log('Initialization complete');
     } catch (error) {
@@ -947,6 +1085,21 @@ if (document.readyState === 'loading') {
 } else {
     // DOM is already loaded
     init();
+}
+
+// Safari-specific initialization
+if (isSafari || isIOS) {
+    // Additional Safari initialization
+    window.addEventListener('load', () => {
+        console.log('Safari load event fired, re-checking initialization...');
+        setTimeout(() => {
+            const nigeriaTimeElement = document.getElementById('nigeria-time');
+            if (nigeriaTimeElement && nigeriaTimeElement.textContent === '--:--:--') {
+                console.log('Re-initializing for Safari...');
+                init();
+            }
+        }, 500);
+    });
 }
 
 // Additional fallback for edge cases
