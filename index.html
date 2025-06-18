@@ -377,5 +377,84 @@
     </div>
 
     <script src="script.js"></script>
+    <script src="safari-fix.js"></script>
+    
+    <!-- Safari iOS fallback -->
+    <script>
+        // Immediate Safari iOS fix
+        (function() {
+            var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            
+            if (isIOS || isSafari) {
+                console.log('Safari iOS detected - applying fallback');
+                
+                function updateBasicClocks() {
+                    try {
+                        var now = new Date();
+                        var nigeriaTime = new Date(now.getTime() + (1 * 60 * 60 * 1000));
+                        var hfmTime = new Date(now.getTime() + (2 * 60 * 60 * 1000));
+                        var nyTime = new Date(now.getTime() - (4 * 60 * 60 * 1000));
+                        
+                        function formatTime(date) {
+                            return date.toLocaleTimeString('en-US', {
+                                hour12: false,
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit'
+                            });
+                        }
+                        
+                        var nigeriaEl = document.getElementById('nigeria-time');
+                        var hfmEl = document.getElementById('hfm-time');
+                        var nyEl = document.getElementById('ny-time');
+                        
+                        if (nigeriaEl) nigeriaEl.textContent = formatTime(nigeriaTime);
+                        if (hfmEl) hfmEl.textContent = formatTime(hfmTime);
+                        if (nyEl) nyEl.textContent = formatTime(nyTime);
+                        
+                        // Update countdowns with basic values
+                        var countdownIds = ['sydney-countdown', 'tokyo-countdown', 'london-countdown', 'ny-countdown', 'daily-countdown', 'next-candle'];
+                        countdownIds.forEach(function(id) {
+                            var el = document.getElementById(id);
+                            if (el) {
+                                el.textContent = '00:00:01';
+                            }
+                        });
+                        
+                        console.log('Basic clocks updated');
+                    } catch (e) {
+                        console.error('Basic clock update error:', e);
+                    }
+                }
+                
+                // Try to update immediately
+                updateBasicClocks();
+                
+                // Set up interval
+                setInterval(updateBasicClocks, 1000);
+                
+                // Mobile menu fallback
+                var menuToggle = document.getElementById('menu-toggle');
+                var navLinks = document.getElementById('nav-links');
+                var menuOverlay = document.getElementById('menu-overlay');
+                
+                if (menuToggle && navLinks && menuOverlay) {
+                    menuToggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        navLinks.classList.add('active');
+                        menuOverlay.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    });
+                    
+                    menuOverlay.addEventListener('click', function() {
+                        navLinks.classList.remove('active');
+                        menuOverlay.classList.remove('active');
+                        document.body.style.overflow = '';
+                    });
+                }
+            }
+        })();
+    </script>
 </body>
 </html>
