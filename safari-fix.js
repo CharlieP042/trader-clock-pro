@@ -111,6 +111,89 @@
         }
     }
     
+    // Preferences modal
+    function initPreferencesModal() {
+        try {
+            var preferencesLink = document.getElementById('preferences-link');
+            var modal = document.getElementById('preferences-modal');
+            var closeBtn = document.getElementById('close-preferences');
+            var saveBtn = document.getElementById('save-preferences');
+            var resetBtn = document.getElementById('reset-preferences');
+            
+            if (preferencesLink && modal) {
+                // Open preferences modal
+                var openModal = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    modal.classList.add('active');
+                    modal.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                    console.log('Preferences modal opened');
+                };
+                
+                // Close preferences modal
+                var closeModal = function() {
+                    modal.classList.remove('active');
+                    modal.setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
+                    console.log('Preferences modal closed');
+                };
+                
+                // Add event listeners with Safari-specific handling
+                if (isIOS || isSafari) {
+                    // Use touchstart for better iOS responsiveness
+                    preferencesLink.addEventListener('touchstart', openModal, { passive: false });
+                    preferencesLink.addEventListener('click', openModal);
+                    
+                    if (closeBtn) {
+                        closeBtn.addEventListener('touchstart', function(e) {
+                            e.preventDefault();
+                            closeModal();
+                        }, { passive: false });
+                        closeBtn.addEventListener('click', closeModal);
+                    }
+                } else {
+                    preferencesLink.addEventListener('click', openModal);
+                    if (closeBtn) {
+                        closeBtn.addEventListener('click', closeModal);
+                    }
+                }
+                
+                // Close on overlay click
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeModal();
+                    }
+                });
+                
+                // Close on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && modal.classList.contains('active')) {
+                        closeModal();
+                    }
+                });
+                
+                // Save and reset buttons
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', function() {
+                        console.log('Preferences saved');
+                        closeModal();
+                    });
+                }
+                
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', function() {
+                        console.log('Preferences reset');
+                    });
+                }
+                
+                console.log('Preferences modal initialized');
+            }
+        } catch (e) {
+            console.error('Preferences modal error:', e);
+        }
+    }
+    
     // Initialize everything
     function init() {
         console.log('Safari iOS initialization starting...');
@@ -123,8 +206,9 @@
         setInterval(updateClocks, 1000);
         setInterval(updateCountdowns, 1000);
         
-        // Initialize menu
+        // Initialize menu and preferences
         initMobileMenu();
+        initPreferencesModal();
         
         console.log('Safari iOS initialization complete');
     }
