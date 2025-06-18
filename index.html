@@ -453,6 +453,34 @@
                         document.body.style.overflow = '';
                     });
                 }
+                
+                // Preferences modal fallback
+                var preferencesLink = document.getElementById('preferences-link');
+                var preferencesModal = document.getElementById('preferences-modal');
+                var closePreferences = document.getElementById('close-preferences');
+                
+                if (preferencesLink && preferencesModal) {
+                    preferencesLink.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        preferencesModal.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    });
+                    
+                    if (closePreferences) {
+                        closePreferences.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            preferencesModal.classList.remove('active');
+                            document.body.style.overflow = '';
+                        });
+                    }
+                    
+                    preferencesModal.addEventListener('click', function(e) {
+                        if (e.target === preferencesModal) {
+                            preferencesModal.classList.remove('active');
+                            document.body.style.overflow = '';
+                        }
+                    });
+                }
             }
         })();
     </script>
