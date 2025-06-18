@@ -81,17 +81,65 @@ const DEFAULT_PREFERENCES = {
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
+// Aggressive Safari initialization
+function aggressiveSafariInit() {
+    console.log('Starting aggressive Safari initialization...');
+    
+    // Force immediate execution
+    const forceInit = () => {
+        try {
+            console.log('Force initializing...');
+            
+            // Basic clock updates
+            const nigeriaTime = getTimeInTimezone(TIMEZONES.NIGERIA);
+            const hfmTime = getTimeInTimezone(TIMEZONES.HFM);
+            const nyTime = getTimeInTimezone(TIMEZONES.NY);
+
+            const nigeriaElement = document.getElementById('nigeria-time');
+            const hfmElement = document.getElementById('hfm-time');
+            const nyElement = document.getElementById('ny-time');
+
+            if (nigeriaElement) nigeriaElement.textContent = formatTime(nigeriaTime);
+            if (hfmElement) hfmElement.textContent = formatTime(hfmTime);
+            if (nyElement) nyElement.textContent = formatTime(nyTime);
+
+            // Basic countdown updates
+            const countdownElements = [
+                'sydney-countdown', 'tokyo-countdown', 'london-countdown', 'ny-countdown',
+                'daily-countdown', 'next-candle'
+            ];
+
+            countdownElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = '00:00:01'; // Force a visible value
+                }
+            });
+
+            console.log('Aggressive initialization complete');
+        } catch (error) {
+            console.error('Aggressive init error:', error);
+        }
+    };
+
+    // Try multiple times
+    forceInit();
+    setTimeout(forceInit, 100);
+    setTimeout(forceInit, 500);
+    setTimeout(forceInit, 1000);
+}
+
 // Safari-specific fixes
 if (isSafari || isIOS) {
-    console.log('Safari/iOS detected, applying specific fixes...');
+    console.log('Safari/iOS detected, applying aggressive fixes...');
     
-    // Fix for Safari's strict JavaScript policies
-    document.addEventListener('DOMContentLoaded', function() {
-        // Force a repaint to ensure elements are properly rendered
-        document.body.style.display = 'none';
-        document.body.offsetHeight; // Force reflow
-        document.body.style.display = '';
-    });
+    // Immediate execution attempt
+    if (document.readyState === 'complete') {
+        aggressiveSafariInit();
+    } else {
+        window.addEventListener('load', aggressiveSafariInit);
+        document.addEventListener('DOMContentLoaded', aggressiveSafariInit);
+    }
 }
 
 // More robust initialization for Safari
