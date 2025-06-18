@@ -387,8 +387,9 @@
             var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
             
             if (isIOS || isSafari) {
-                console.log('Safari iOS detected - applying fallback');
+                console.log('Safari iOS detected - applying basic fallback');
                 
+                // Basic clock updates (fallback only)
                 function updateBasicClocks() {
                     try {
                         var now = new Date();
@@ -413,26 +414,14 @@
                         if (hfmEl) hfmEl.textContent = formatTime(hfmTime);
                         if (nyEl) nyEl.textContent = formatTime(nyTime);
                         
-                        // Update countdowns with basic values
-                        var countdownIds = ['sydney-countdown', 'tokyo-countdown', 'london-countdown', 'ny-countdown', 'daily-countdown', 'next-candle'];
-                        countdownIds.forEach(function(id) {
-                            var el = document.getElementById(id);
-                            if (el) {
-                                el.textContent = '00:00:01';
-                            }
-                        });
-                        
                         console.log('Basic clocks updated');
                     } catch (e) {
                         console.error('Basic clock update error:', e);
                     }
                 }
                 
-                // Try to update immediately
+                // Try to update immediately (fallback only)
                 updateBasicClocks();
-                
-                // Set up interval
-                setInterval(updateBasicClocks, 1000);
                 
                 // Mobile menu fallback
                 var menuToggle = document.getElementById('menu-toggle');
