@@ -711,16 +711,20 @@ h1 {
     display: flex;
     gap: 1rem;
     margin-bottom: 1rem;
+    justify-content: center;
+    align-items: center;
 }
 
 .alerts-filter select {
     flex: 1;
+    max-width: 200px;
     padding: 0.5rem;
     border: 1px solid var(--bg-primary);
     border-radius: 6px;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     font-size: 0.875rem;
+    text-align: center;
 }
 
 /* Priority Indicators */
