@@ -362,7 +362,11 @@
             };
             
             savePreferences(preferences);
-            console.log('Preferences saved successfully');
+            
+            // Apply changes immediately
+            updateUIFromPreferences();
+            
+            console.log('Preferences saved and applied immediately');
             
             // Show success message
             var notification = document.createElement('div');
@@ -385,7 +389,11 @@
         try {
             savePreferences(DEFAULT_PREFERENCES);
             loadPreferencesToForm();
-            console.log('Preferences reset to default');
+            
+            // Apply changes immediately
+            updateUIFromPreferences();
+            
+            console.log('Preferences reset to default and applied immediately');
             
             // Show reset message
             var notification = document.createElement('div');
@@ -547,6 +555,169 @@
         }
     }
     
+    // Update session statuses
+    function updateSessions() {
+        try {
+            var now = new Date();
+            var currentHour = now.getUTCHours();
+            var currentMinute = now.getUTCMinutes();
+            var currentTime = currentHour + (currentMinute / 60);
+            
+            // Check if session is active
+            function isSessionActive(session) {
+                if (session.start > session.end) {
+                    return currentTime >= session.start || currentTime < session.end;
+                }
+                return currentTime >= session.start && currentTime < session.end;
+            }
+            
+            // Check London-NY overlap
+            function isLondonNYOverlapActive() {
+                var londonStart = SESSIONS.LONDON.start;
+                var londonEnd = SESSIONS.LONDON.end;
+                var nyStart = SESSIONS.NY.start;
+                var nyEnd = SESSIONS.NY.end;
+                
+                var londonActive = isSessionActive(SESSIONS.LONDON);
+                var nyActive = isSessionActive(SESSIONS.NY);
+                
+                return londonActive && nyActive;
+            }
+            
+            // Update individual sessions
+            var sessions = [
+                { element: document.getElementById('sydney-session'), session: SESSIONS.SYDNEY },
+                { element: document.getElementById('tokyo-session'), session: SESSIONS.TOKYO },
+                { element: document.getElementById('london-session'), session: SESSIONS.LONDON },
+                { element: document.getElementById('ny-session'), session: SESSIONS.NY }
+            ];
+            
+            sessions.forEach(function(item) {
+                if (item.element) {
+                    var statusElement = item.element.querySelector('.session-status');
+                    if (statusElement) {
+                        if (isSessionActive(item.session)) {
+                            statusElement.textContent = 'Active';
+                            statusElement.className = 'session-status active';
+                        } else {
+                            statusElement.textContent = 'Closed';
+                            statusElement.className = 'session-status';
+                        }
+                    }
+                }
+            });
+            
+            // Update London-NY overlap
+            var overlapElement = document.getElementById('london-ny-overlap');
+            if (overlapElement) {
+                var overlapStatus = overlapElement.querySelector('.overlap-status');
+                if (overlapStatus) {
+                    if (isLondonNYOverlapActive()) {
+                        overlapStatus.textContent = 'Active';
+                        overlapStatus.className = 'overlap-status active';
+                    } else {
+                        overlapStatus.textContent = 'Closed';
+                        overlapStatus.className = 'overlap-status';
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Session update error:', e);
+        }
+    }
+    
+    // Apply theme immediately
+    function applyTheme(theme) {
+        try {
+            if (theme === 'system') {
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                theme = prefersDark ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+            console.log('Theme applied:', theme);
+        } catch (e) {
+            console.error('Theme application error:', e);
+        }
+    }
+    
+    // Update UI based on preferences
+    function updateUIFromPreferences() {
+        try {
+            var preferences = loadPreferences();
+            
+            // Apply theme immediately
+            applyTheme(preferences.theme);
+            
+            // Update timezone displays
+            var nigeriaElement = document.getElementById('nigeria-time');
+            var hfmElement = document.getElementById('hfm-time');
+            var nyElement = document.getElementById('ny-time');
+            
+            if (nigeriaElement && nigeriaElement.parentElement) {
+                nigeriaElement.parentElement.style.display = preferences.timezones.nigeria ? 'block' : 'none';
+            }
+            if (hfmElement && hfmElement.parentElement) {
+                hfmElement.parentElement.style.display = preferences.timezones.hfm ? 'block' : 'none';
+            }
+            if (nyElement && nyElement.parentElement) {
+                nyElement.parentElement.style.display = preferences.timezones.ny ? 'block' : 'none';
+            }
+            
+            // Update session displays
+            var sessionElements = [
+                { id: 'sydney-session', enabled: preferences.sessions.sydney },
+                { id: 'tokyo-session', enabled: preferences.sessions.tokyo },
+                { id: 'london-session', enabled: preferences.sessions.london },
+                { id: 'ny-session', enabled: preferences.sessions.ny },
+                { id: 'london-ny-overlap', enabled: preferences.sessions.overlap }
+            ];
+            
+            sessionElements.forEach(function(item) {
+                var element = document.getElementById(item.id);
+                if (element) {
+                    element.style.display = item.enabled ? 'block' : 'none';
+                }
+            });
+            
+        } catch (e) {
+            console.error('UI update error:', e);
+        }
+    }
+    
+    // Theme toggle functionality
+    function initThemeToggles() {
+        try {
+            var desktopThemeToggle = document.getElementById('desktop-theme-toggle');
+            var mobileThemeToggle = document.getElementById('mobile-theme-toggle');
+            
+            function toggleTheme() {
+                var currentTheme = document.documentElement.getAttribute('data-theme');
+                var newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                
+                applyTheme(newTheme);
+                
+                // Save to preferences
+                var preferences = loadPreferences();
+                preferences.theme = newTheme;
+                savePreferences(preferences);
+                
+                console.log('Theme toggled to:', newTheme);
+            }
+            
+            if (desktopThemeToggle) {
+                desktopThemeToggle.addEventListener('click', toggleTheme);
+            }
+            
+            if (mobileThemeToggle) {
+                mobileThemeToggle.addEventListener('click', toggleTheme);
+            }
+            
+            console.log('Theme toggles initialized');
+        } catch (e) {
+            console.error('Theme toggle error:', e);
+        }
+    }
+    
     // Initialize everything
     function init() {
         console.log('Safari iOS comprehensive initialization starting...');
@@ -555,15 +726,21 @@
         updateClocks();
         updateSessionCountdowns();
         updateDailyCountdown();
+        updateSessions();
+        
+        // Apply UI preferences
+        updateUIFromPreferences();
         
         // Set up synchronized intervals
         setInterval(updateClocks, 1000);
         setInterval(updateSessionCountdowns, 1000);
         setInterval(updateDailyCountdown, 1000);
+        setInterval(updateSessions, 1000);
         
         // Initialize menu and preferences
         initMobileMenu();
         initPreferencesModal();
+        initThemeToggles();
         
         console.log('Safari iOS comprehensive initialization complete');
     }
