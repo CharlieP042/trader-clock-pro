@@ -10,7 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <!-- Navigation -->
+    <nav class="navbar">
         <div class="nav-container">
             <div class="nav-left">
                 <div class="logo">Trader Clock Pro</div>
@@ -29,7 +30,7 @@
                         <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                     </svg>
                 </button>
-                <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
+                <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
                     <span></span>
                     <span></span>
                     <span></span>
@@ -46,7 +47,7 @@
                 <li><a href="#sessions">Sessions</a></li>
                 <li><a href="#alerts">Alerts</a></li>
                 <li><a href="#countdown">Countdown</a></li>
-                <li><a href="#" id="preferences-link" role="button" aria-haspopup="dialog" aria-controls="preferences-modal">Preferences</a></li>
+                <li><a href="#" id="preferences-link">Preferences</a></li>
                 <li class="theme-toggle-container">
                     <button class="theme-toggle desktop-theme-toggle" id="desktop-theme-toggle" aria-label="Toggle theme">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -65,11 +66,11 @@
             </ul>
         </div>
     </nav>
-    <div class="menu-overlay" id="menu-overlay" aria-hidden="true"></div>
+    <div class="menu-overlay" id="menu-overlay"></div>
 
+    <!-- Main Content -->
     <div class="container">
-        
-        
+        <!-- Clocks Section -->
         <main class="clocks-container" id="clocks">
             <div class="clock-card">
                 <h2>Nigeria Time</h2>
@@ -90,6 +91,7 @@
             </div>
         </main>
 
+        <!-- Sessions Section -->
         <section class="sessions-container" id="sessions">
             <h2 class="section-title">Trading Sessions</h2>
             <div class="sessions-grid">
@@ -137,6 +139,7 @@
             </div>
         </section>
 
+        <!-- Alerts Section -->
         <section class="alerts-container" id="alerts">
             <h2 class="section-title">Trading Alerts</h2>
             <div class="alerts-grid">
@@ -218,6 +221,7 @@
             </div>
         </section>
 
+        <!-- Countdown Section -->
         <section class="countdown-container" id="countdown">
             <h2 class="section-title">Daily Candle Countdown</h2>
             <div class="countdown-grid">
@@ -235,7 +239,7 @@
         </section>
     </div>
 
-    <!-- Include preferences modal -->
+    <!-- Preferences Modal -->
     <div id="preferences-modal" class="preferences-modal">
         <div class="preferences-content">
             <div class="preferences-header">
@@ -376,102 +380,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
-    <script src="safari-fix.js"></script>
-    
-    <!-- Safari iOS fallback -->
-    <script>
-        // Immediate Safari iOS fix
-        (function() {
-            var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-            var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-            
-            if (isIOS || isSafari) {
-                console.log('Safari iOS detected - applying basic fallback');
-                
-                // Basic clock updates (fallback only)
-                function updateBasicClocks() {
-                    try {
-                        var now = new Date();
-                        var nigeriaTime = new Date(now.getTime() + (1 * 60 * 60 * 1000));
-                        var hfmTime = new Date(now.getTime() + (2 * 60 * 60 * 1000));
-                        var nyTime = new Date(now.getTime() - (4 * 60 * 60 * 1000));
-                        
-                        function formatTime(date) {
-                            return date.toLocaleTimeString('en-US', {
-                                hour12: false,
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                second: '2-digit'
-                            });
-                        }
-                        
-                        var nigeriaEl = document.getElementById('nigeria-time');
-                        var hfmEl = document.getElementById('hfm-time');
-                        var nyEl = document.getElementById('ny-time');
-                        
-                        if (nigeriaEl) nigeriaEl.textContent = formatTime(nigeriaTime);
-                        if (hfmEl) hfmEl.textContent = formatTime(hfmTime);
-                        if (nyEl) nyEl.textContent = formatTime(nyTime);
-                        
-                        console.log('Basic clocks updated');
-                    } catch (e) {
-                        console.error('Basic clock update error:', e);
-                    }
-                }
-                
-                // Try to update immediately (fallback only)
-                updateBasicClocks();
-                
-                // Mobile menu fallback
-                var menuToggle = document.getElementById('menu-toggle');
-                var navLinks = document.getElementById('nav-links');
-                var menuOverlay = document.getElementById('menu-overlay');
-                
-                if (menuToggle && navLinks && menuOverlay) {
-                    menuToggle.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        navLinks.classList.add('active');
-                        menuOverlay.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    });
-                    
-                    menuOverlay.addEventListener('click', function() {
-                        navLinks.classList.remove('active');
-                        menuOverlay.classList.remove('active');
-                        document.body.style.overflow = '';
-                    });
-                }
-                
-                // Preferences modal fallback
-                var preferencesLink = document.getElementById('preferences-link');
-                var preferencesModal = document.getElementById('preferences-modal');
-                var closePreferences = document.getElementById('close-preferences');
-                
-                if (preferencesLink && preferencesModal) {
-                    preferencesLink.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        preferencesModal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    });
-                    
-                    if (closePreferences) {
-                        closePreferences.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            preferencesModal.classList.remove('active');
-                            document.body.style.overflow = '';
-                        });
-                    }
-                    
-                    preferencesModal.addEventListener('click', function(e) {
-                        if (e.target === preferencesModal) {
-                            preferencesModal.classList.remove('active');
-                            document.body.style.overflow = '';
-                        }
-                    });
-                }
-            }
-        })();
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
