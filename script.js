@@ -81,6 +81,16 @@ const DEFAULT_PREFERENCES = {
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
+// Disable all Safari-specific code in main script - let safari-fix.js handle everything
+if (isSafari || isIOS) {
+    console.log('Safari detected - main script disabled, using safari-fix.js');
+    // Don't initialize anything - let safari-fix.js take over
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Main script DOMContentLoaded ignored for Safari');
+    });
+    return;
+}
+
 // Aggressive Safari initialization
 function aggressiveSafariInit() {
     console.log('Starting aggressive Safari initialization...');
@@ -356,12 +366,12 @@ function updateSessions() {
             if (nyStatus) {
                 nyStatus.textContent = isSessionActive(SESSIONS.NY) ? 'Active' : 'Closed';
                 nyStatus.className = `session-status ${isSessionActive(SESSIONS.NY) ? 'active' : ''}`;
-            }
+        }
         }
 
         // London-NY Overlap
         if (londonNyOverlap) {
-            const overlapStatus = londonNyOverlap.querySelector('.overlap-status');
+    const overlapStatus = londonNyOverlap.querySelector('.overlap-status');
             if (overlapStatus) {
                 overlapStatus.textContent = isLondonNYOverlapActive() ? 'Active' : 'Closed';
                 overlapStatus.className = `overlap-status ${isLondonNYOverlapActive() ? 'active' : ''}`;
@@ -406,9 +416,9 @@ function updateTimezoneOffsets() {
 // Update clocks with proper handling
 function updateClocks() {
     try {
-        const nigeriaTime = getTimeInTimezone(TIMEZONES.NIGERIA);
-        const hfmTime = getTimeInTimezone(TIMEZONES.HFM);
-        const nyTime = getTimeInTimezone(TIMEZONES.NY);
+    const nigeriaTime = getTimeInTimezone(TIMEZONES.NIGERIA);
+    const hfmTime = getTimeInTimezone(TIMEZONES.HFM);
+    const nyTime = getTimeInTimezone(TIMEZONES.NY);
 
         if (nigeriaTimeDisplay) {
             nigeriaTimeDisplay.textContent = formatTime(nigeriaTime);
@@ -417,10 +427,10 @@ function updateClocks() {
             hfmTimeDisplay.textContent = formatTime(hfmTime);
         }
         if (nyTimeDisplay) {
-            nyTimeDisplay.textContent = formatTime(nyTime);
+    nyTimeDisplay.textContent = formatTime(nyTime);
         }
 
-        updateSessions();
+    updateSessions();
     } catch (error) {
         console.error('Error updating clocks:', error);
     }
@@ -621,23 +631,23 @@ if (Notification.permission !== 'granted') {
 // Calculate time until next session with Safari compatibility
 function calculateTimeUntilNextSession(session) {
     try {
-        const now = new Date();
-        const currentHour = now.getUTCHours();
-        const currentMinute = now.getUTCMinutes();
-        const currentSecond = now.getUTCSeconds();
-        
-        let targetHour = session.start;
-        let targetDate = new Date(now);
-        
-        // If session has already started today, calculate for next day
-        if (currentHour >= session.end) {
-            targetDate.setUTCDate(targetDate.getUTCDate() + 1);
-        }
-        
-        // Set target time
-        targetDate.setUTCHours(targetHour, 0, 0, 0);
-        
-        // Calculate time difference
+    const now = new Date();
+    const currentHour = now.getUTCHours();
+    const currentMinute = now.getUTCMinutes();
+    const currentSecond = now.getUTCSeconds();
+    
+    let targetHour = session.start;
+    let targetDate = new Date(now);
+    
+    // If session has already started today, calculate for next day
+    if (currentHour >= session.end) {
+        targetDate.setUTCDate(targetDate.getUTCDate() + 1);
+    }
+    
+    // Set target time
+    targetDate.setUTCHours(targetHour, 0, 0, 0);
+    
+    // Calculate time difference
         const timeDiff = targetDate.getTime() - now.getTime();
         
         // Safari-specific validation
@@ -670,19 +680,19 @@ function formatCountdownTime(milliseconds) {
 // Update session countdowns with proper handling
 function updateSessionCountdowns() {
     try {
-        const sessions = [
-            { element: sydneyCountdown, session: SESSIONS.SYDNEY },
-            { element: tokyoCountdown, session: SESSIONS.TOKYO },
-            { element: londonCountdown, session: SESSIONS.LONDON },
-            { element: nyCountdown, session: SESSIONS.NY }
-        ];
-        
-        sessions.forEach(({ element, session }) => {
+    const sessions = [
+        { element: sydneyCountdown, session: SESSIONS.SYDNEY },
+        { element: tokyoCountdown, session: SESSIONS.TOKYO },
+        { element: londonCountdown, session: SESSIONS.LONDON },
+        { element: nyCountdown, session: SESSIONS.NY }
+    ];
+    
+    sessions.forEach(({ element, session }) => {
             if (element) {
-                const timeUntilNext = calculateTimeUntilNextSession(session);
-                element.textContent = formatCountdownTime(timeUntilNext);
+        const timeUntilNext = calculateTimeUntilNextSession(session);
+        element.textContent = formatCountdownTime(timeUntilNext);
             }
-        });
+    });
     } catch (error) {
         console.error('Error updating session countdowns:', error);
     }
@@ -691,29 +701,29 @@ function updateSessionCountdowns() {
 // Update daily countdown with proper handling
 function updateDailyCountdown() {
     try {
-        const now = new Date();
-        const currentHour = now.getUTCHours();
-        const currentMinute = now.getUTCMinutes();
-        const currentSecond = now.getUTCSeconds();
-        
-        // Calculate time until next daily candle (HFM Server Time)
-        const hfmOffset = TIMEZONES.HFM;
-        const hfmHour = (currentHour + hfmOffset + 24) % 24;
-        
-        // Calculate time until daily close
-        let closeDate = new Date(now);
-        if (hfmHour >= 0) {
-            closeDate.setUTCDate(closeDate.getUTCDate() + 1);
-        }
-        closeDate.setUTCHours(-hfmOffset, 0, 0, 0);
-        const timeUntilClose = closeDate.getTime() - now.getTime();
-        
-        // Calculate time until next candle open
-        let openDate = new Date(closeDate);
-        openDate.setUTCHours(openDate.getUTCHours() + 1); // Next candle opens 1 hour after close
-        const timeUntilOpen = openDate.getTime() - now.getTime();
-        
-        // Update both countdown displays
+    const now = new Date();
+    const currentHour = now.getUTCHours();
+    const currentMinute = now.getUTCMinutes();
+    const currentSecond = now.getUTCSeconds();
+    
+    // Calculate time until next daily candle (HFM Server Time)
+    const hfmOffset = TIMEZONES.HFM;
+    const hfmHour = (currentHour + hfmOffset + 24) % 24;
+    
+    // Calculate time until daily close
+    let closeDate = new Date(now);
+    if (hfmHour >= 0) {
+        closeDate.setUTCDate(closeDate.getUTCDate() + 1);
+    }
+    closeDate.setUTCHours(-hfmOffset, 0, 0, 0);
+    const timeUntilClose = closeDate.getTime() - now.getTime();
+    
+    // Calculate time until next candle open
+    let openDate = new Date(closeDate);
+    openDate.setUTCHours(openDate.getUTCHours() + 1); // Next candle opens 1 hour after close
+    const timeUntilOpen = openDate.getTime() - now.getTime();
+    
+    // Update both countdown displays
         const dailyCountdownElement = document.getElementById('daily-countdown');
         const nextCandleElement = document.getElementById('next-candle');
         
@@ -757,37 +767,37 @@ function updateUIFromPreferences() {
 // Initialize mobile menu
 function initMobileMenu() {
     try {
-        const menuToggle = document.getElementById('menu-toggle');
-        const menuClose = document.getElementById('menu-close');
-        const navLinks = document.getElementById('nav-links');
-        const menuOverlay = document.getElementById('menu-overlay');
-        const body = document.body;
+    const menuToggle = document.getElementById('menu-toggle');
+    const menuClose = document.getElementById('menu-close');
+    const navLinks = document.getElementById('nav-links');
+    const menuOverlay = document.getElementById('menu-overlay');
+    const body = document.body;
 
-        if (!menuToggle || !menuClose || !navLinks || !menuOverlay) {
+    if (!menuToggle || !menuClose || !navLinks || !menuOverlay) {
             console.error('Required navigation elements not found:', {
                 menuToggle: !!menuToggle,
                 menuClose: !!menuClose,
                 navLinks: !!navLinks,
                 menuOverlay: !!menuOverlay
             });
-            return;
-        }
+        return;
+    }
 
         console.log('Mobile menu elements found, initializing...');
 
-        // Function to close menu
-        const closeMenu = () => {
+    // Function to close menu
+    const closeMenu = () => {
             try {
-                menuToggle.classList.remove('active');
-                menuToggle.setAttribute('aria-expanded', 'false');
-                navLinks.classList.remove('active');
-                menuOverlay.classList.remove('active');
-                menuOverlay.setAttribute('aria-hidden', 'true');
+        menuToggle.classList.remove('active');
+        menuToggle.setAttribute('aria-expanded', 'false');
+        navLinks.classList.remove('active');
+        menuOverlay.classList.remove('active');
+        menuOverlay.setAttribute('aria-hidden', 'true');
                 
                 // Safari-specific body overflow fix
                 if (isSafari || isIOS) {
                     setTimeout(() => {
-                        body.style.overflow = '';
+        body.style.overflow = '';
                     }, 100);
                 } else {
                     body.style.overflow = '';
@@ -795,21 +805,21 @@ function initMobileMenu() {
             } catch (error) {
                 console.error('Error closing menu:', error);
             }
-        };
+    };
 
-        // Function to open menu
-        const openMenu = () => {
+    // Function to open menu
+    const openMenu = () => {
             try {
-                menuToggle.classList.add('active');
-                menuToggle.setAttribute('aria-expanded', 'true');
-                navLinks.classList.add('active');
-                menuOverlay.classList.add('active');
-                menuOverlay.setAttribute('aria-hidden', 'false');
+        menuToggle.classList.add('active');
+        menuToggle.setAttribute('aria-expanded', 'true');
+        navLinks.classList.add('active');
+        menuOverlay.classList.add('active');
+        menuOverlay.setAttribute('aria-hidden', 'false');
                 
                 // Safari-specific body overflow fix
                 if (isSafari || isIOS) {
                     setTimeout(() => {
-                        body.style.overflow = 'hidden';
+        body.style.overflow = 'hidden';
                     }, 100);
                 } else {
                     body.style.overflow = 'hidden';
@@ -817,18 +827,18 @@ function initMobileMenu() {
             } catch (error) {
                 console.error('Error opening menu:', error);
             }
-        };
+    };
 
         // Toggle menu on button click - Safari-specific event handling
         const handleMenuToggle = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
             console.log('Menu toggle clicked');
             
             // Safari-specific delay
             if (isSafari || isIOS) {
                 setTimeout(() => {
-                    openMenu();
+        openMenu();
                 }, 50);
             } else {
                 openMenu();
@@ -837,14 +847,14 @@ function initMobileMenu() {
 
         // Close menu on close button click - Safari-specific event handling
         const handleMenuClose = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
             console.log('Menu close clicked');
             
             // Safari-specific delay
             if (isSafari || isIOS) {
                 setTimeout(() => {
-                    closeMenu();
+        closeMenu();
                 }, 50);
             } else {
                 closeMenu();
@@ -865,35 +875,35 @@ function initMobileMenu() {
             menuClose.addEventListener('click', handleMenuClose);
         }
 
-        // Close menu when clicking a link
-        navLinks.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                closeMenu();
-            });
-        });
-
-        // Close menu when clicking overlay
-        menuOverlay.addEventListener('click', () => {
+    // Close menu when clicking a link
+    navLinks.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
             closeMenu();
         });
+    });
 
-        // Close menu on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && navLinks.classList.contains('active')) {
+    // Close menu when clicking overlay
+    menuOverlay.addEventListener('click', () => {
+        closeMenu();
+    });
+
+    // Close menu on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && navLinks.classList.contains('active')) {
+            closeMenu();
+        }
+    });
+
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (window.innerWidth > 768 && navLinks.classList.contains('active')) {
                 closeMenu();
             }
-        });
-
-        // Handle window resize
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
-                if (window.innerWidth > 768 && navLinks.classList.contains('active')) {
-                    closeMenu();
-                }
-            }, 250);
-        });
+        }, 250);
+    });
 
         console.log('Mobile menu initialized successfully');
     } catch (error) {
@@ -1098,19 +1108,19 @@ function init() {
         if (isSafari || isIOS) {
             safariSafeInit();
         } else {
-            setInitialTheme();
-            updateTimezoneOffsets();
-            updateClocks();
-            setInterval(updateClocks, 1000);
-            updateAlertsList();
-            setInterval(checkAlerts, 1000);
-            setInterval(updateDailyCountdown, 1000);
-            setInterval(updateSessionCountdowns, 1000);
-            updateDailyCountdown();
-            updateSessionCountdowns();
-            initPreferencesModal();
-            initMobileMenu();
-            updateUIFromPreferences();
+    setInitialTheme();
+    updateTimezoneOffsets();
+    updateClocks();
+    setInterval(updateClocks, 1000);
+    updateAlertsList();
+    setInterval(checkAlerts, 1000);
+    setInterval(updateDailyCountdown, 1000);
+    setInterval(updateSessionCountdowns, 1000);
+    updateDailyCountdown();
+    updateSessionCountdowns();
+    initPreferencesModal();
+    initMobileMenu();
+    updateUIFromPreferences();
         }
         
         // Test countdown functionality
