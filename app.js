@@ -5,7 +5,7 @@
     // Configuration
     const TIMEZONES = {
         NIGERIA: 1,
-        HFM: 2,
+        HFM: 3,
         NY: -4
     };
 
